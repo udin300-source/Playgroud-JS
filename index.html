@@ -816,8 +816,9 @@ console.log(sapa('Dunia'));
         if (empty) empty.remove();
 
         const now = new Date();
-        const ts = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-
+        const ms = String(now.getMilliseconds()).padStart(3, '0'); 
+        const ts = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${ms}`;
+        // jam:menit:detik:milidetik
         // judul singkat: gabungan preview tiap argumen
         let title = args
           .map((a) => previewValue(a))
