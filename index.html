@@ -589,8 +589,18 @@
           },
           ".cm-content": { caretColor: "#7da8b8", padding: "10px 0" },
           ".cm-cursor, .cm-dropCursor": { borderLeftColor: "#7da8b8" },
-          "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection":
-            { backgroundColor: "#78b9ff" },
+          // 1. Warna untuk area background blok (lapisan bawah)
+          ".cm-selectionBackground": { backgroundColor: "#78b9ff !important" },
+          
+          // 2. Warna untuk teks asli yang sedang diblok (lapisan atas browser)
+          ".cm-content ::selection": { 
+            backgroundColor: "#78b9ff !important", 
+            color: "#0f1115 !important" 
+          },
+          
+          // 3. Warna kata kembar di baris lain (kita buat agak redup/berbeda supaya Anda tidak bingung)
+          ".cm-selectionMatch": { backgroundColor: "#243341 !important" },
+                    
           ".cm-gutters": {
             backgroundColor: "#0f1115",
             color: "#3d4654",
