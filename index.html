@@ -590,7 +590,7 @@
           ".cm-content": { caretColor: "#7da8b8", padding: "10px 0" },
           ".cm-cursor, .cm-dropCursor": { borderLeftColor: "#7da8b8" },
           "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection":
-            { backgroundColor: "#26313d" },
+            { backgroundColor: "#78b9ff" },
           ".cm-gutters": {
             backgroundColor: "#0f1115",
             color: "#3d4654",
@@ -744,13 +744,16 @@ console.log(sapa('Dunia'));
             changes.push({ from: line.from + indent, insert: "// " });
           }
         }
+
+            view.dispatch({ changes });
+          return true;
         
         // Cek apakah ada perubahan teks, jika tidak ada, biarkan seleksi teks normal bekerja
-        if (changes.length > 0) {
-          view.dispatch({ changes });
-          return true;
-        }
-        return false; 
+        // if (changes.length > 0) {
+        //   view.dispatch({ changes });
+        //   return true;
+        // }
+        // return false; 
       }
 
       // KODE INI TETAP DIPERTAHANKAN DI BAWAHNYA
