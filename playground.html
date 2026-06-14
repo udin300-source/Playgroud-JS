@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Playground JavaScript</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "@codemirror/state": "https://esm.sh/@codemirror/state@6",
+          "@codemirror/view": "https://esm.sh/@codemirror/view@6?external=@codemirror/state",
+          "@codemirror/language": "https://esm.sh/@codemirror/language@6?external=@codemirror/state,@codemirror/view,@lezer/common,@lezer/highlight,@lezer/lr",
+          "@codemirror/commands": "https://esm.sh/@codemirror/commands@6?external=@codemirror/state,@codemirror/view,@codemirror/language,@lezer/common",
+          "@codemirror/autocomplete": "https://esm.sh/@codemirror/autocomplete@6?external=@codemirror/state,@codemirror/view,@codemirror/language,@lezer/common",
+          "@codemirror/lint": "https://esm.sh/@codemirror/lint@6?external=@codemirror/state,@codemirror/view",
+          "@codemirror/search": "https://esm.sh/@codemirror/search@6?external=@codemirror/state,@codemirror/view",
+          "@codemirror/lang-javascript": "https://esm.sh/@codemirror/lang-javascript@6?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/autocomplete,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/javascript",
+          "@lezer/common": "https://esm.sh/@lezer/common@1",
+          "@lezer/highlight": "https://esm.sh/@lezer/highlight@1?external=@lezer/common",
+          "@lezer/lr": "https://esm.sh/@lezer/lr@1?external=@lezer/common",
+          "@lezer/javascript": "https://esm.sh/@lezer/javascript@1?external=@lezer/common,@lezer/lr,@lezer/highlight"
+        }
+      }
+    </script>
+    <style>
+      :root {
+        --bg: #0f1115;
+        --panel: #14171d;
+        --panel-2: #171b22;
+        --border: #232833;
+        --border-soft: #1c212a;
+        --text: #c8cdd8;
+        --text-dim: #7a8494;
+        --text-faint: #546070;
+        --accent: #7da8b8;
+        --accent-soft: #1d2730;
+        --green: #8faa7a;
+        --red: #b07878;
+        --orange: #b8956a;
+        --blue: #7a9ab8;
+        --radius: 8px;
+        --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+          sans-serif;
+        --font-mono: ui-monospace, "SFMono-Regular", "JetBrains Mono",
+          "Cascadia Code", Menlo, Consolas, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-ui);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      #app {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+      }
+
+      /* ---------- Toolbar ---------- */
+      #toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 8px 12px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--border);
+        flex: 0 0 auto;
+      }
+
+      #toolbar .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        letter-spacing: 0.2px;
+        margin-right: 4px;
+        user-select: none;
+      }
+
+      #toolbar .brand .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--green);
+      }
+
+      #toolbar .spacer {
+        flex: 1 1 auto;
+      }
+
+      .btn {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: var(--panel-2);
+        color: var(--text-dim);
+        font-family: var(--font-ui);
+        font-size: 12.5px;
+        line-height: 1;
+        padding: 7px 11px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.12s ease, color 0.12s ease,
+          border-color 0.12s ease;
+        white-space: nowrap;
+        user-select: none;
+      }
+
+      .btn:hover {
+        background: #1d222b;
+        color: var(--text);
+        border-color: #2c333f;
+      }
+
+      .btn:active {
+        transform: translateY(1px);
+      }
+
+      .btn.primary {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-color: #2a3a44;
+      }
+
+      .btn.primary:hover {
+        background: #23323c;
+        color: #9cc4d3;
+      }
+
+      .btn[aria-pressed="true"] {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-color: #2a3a44;
+      }
+
+      .btn svg {
+        width: 14px;
+        height: 14px;
+        flex: 0 0 auto;
+      }
+
+      .btn .kbd {
+        font-size: 10px;
+        color: var(--text-faint);
+        font-family: var(--font-mono);
+      }
+
+      /* ---------- Editor pane ---------- */
+      #editor-pane {
+        height: 56%;
+        min-height: 80px;
+        overflow: hidden;
+        position: relative;
+        background: var(--bg);
+      }
+
+      .cm-editor {
+        height: 100%;
+        font-size: 13.5px;
+      }
+
+      .cm-editor .cm-scroller {
+        font-family: var(--font-mono);
+        line-height: 1.6;
+      }
+
+      /* ---------- Resizer ---------- */
+      #resizer {
+        flex: 0 0 auto;
+        height: 8px;
+        cursor: row-resize;
+        background: var(--panel);
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        touch-action: none;
+      }
+
+      #resizer::before {
+        content: "";
+        width: 38px;
+        height: 3px;
+        border-radius: 3px;
+        background: var(--border);
+      }
+
+      #resizer:hover::before {
+        background: var(--text-faint);
+      }
+
+      /* ---------- Console ---------- */
+      #console-pane {
+        flex: 1 1 auto;
+        min-height: 60px;
+        display: flex;
+        flex-direction: column;
+        background: var(--panel);
+        overflow: hidden;
+      }
+
+      /* kotak status: tampil seperti tombol, hanya angka ms */
+      #toolbar .status {
+        border: 1px solid var(--border);
+        background: var(--panel-2);
+        color: var(--text-faint);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        line-height: 1;
+        padding: 7px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+        min-width: 58px;
+        text-align: center;
+        user-select: none;
+      }
+
+      #toolbar .status.err {
+        color: var(--red);
+        border-color: #4a2a2a;
+        background: #2a1c1c;
+      }
+
+      /* kontrol kecepatan auto-run */
+      #toolbar .speed {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--border);
+        background: var(--panel-2);
+        border-radius: 6px;
+        padding: 4px 8px;
+        color: var(--text-dim);
+      }
+
+      #toolbar .speed label {
+        font-size: 12px;
+        font-family: var(--font-ui);
+        user-select: none;
+      }
+
+      #toolbar .speed select {
+        appearance: none;
+        background: transparent;
+        border: none;
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        cursor: pointer;
+        outline: none;
+        padding-right: 2px;
+      }
+
+      #toolbar .speed select option {
+        background: var(--panel);
+        color: var(--text);
+      }
+
+      #console {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 4px 0;
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+      }
+
+      #console .empty {
+        color: var(--text-faint);
+        padding: 14px 14px;
+        font-family: var(--font-ui);
+        font-size: 12.5px;
+      }
+
+      .log {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        padding: 4px 12px;
+        border-bottom: 1px solid var(--border-soft);
+      }
+
+      .log .gutter {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding-top: 1px;
+      }
+
+      .log .badge {
+        font-size: 9px;
+        font-family: var(--font-ui);
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        padding: 2px 5px;
+        border-radius: 4px;
+        min-width: 38px;
+        text-align: center;
+        user-select: none;
+      }
+
+      .log.log .badge {
+        color: var(--text-dim);
+        background: #1c212a;
+      }
+      .log.info .badge {
+        color: var(--blue);
+        background: #18242e;
+      }
+      .log.warn .badge {
+        color: var(--orange);
+        background: #2a2316;
+      }
+      .log.error .badge {
+        color: var(--red);
+        background: #2a1a1a;
+      }
+
+      .log .body {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .log .preview {
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: var(--text);
+        cursor: default;
+      }
+
+      .log.error .preview {
+        color: var(--red);
+      }
+      .log.warn .preview {
+        color: var(--orange);
+      }
+
+      .log.expandable .preview {
+        cursor: pointer;
+      }
+
+      .log .preview .caret {
+        color: var(--text-faint);
+        margin-right: 4px;
+        display: inline-block;
+        transition: transform 0.12s ease;
+        font-family: var(--font-mono);
+      }
+
+      .log.expanded .preview .caret {
+        transform: rotate(90deg);
+      }
+
+      .log .ts {
+        font-size: 10px;
+        color: var(--text-faint);
+        flex: 0 0 auto;
+        padding-top: 2px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .log .detail {
+        display: none;
+        margin-top: 6px;
+        padding: 8px 10px;
+        background: var(--panel-2);
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: var(--text-dim);
+        font-size: 12px;
+      }
+
+      .log.expanded .detail {
+        display: block;
+      }
+
+      /* scrollbar */
+      #console::-webkit-scrollbar,
+      .cm-scroller::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      #console::-webkit-scrollbar-thumb,
+      .cm-scroller::-webkit-scrollbar-thumb {
+        background: #232833;
+        border-radius: 6px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+      }
+      #console::-webkit-scrollbar-thumb:hover,
+      .cm-scroller::-webkit-scrollbar-thumb:hover {
+        background: #313a48;
+        background-clip: content-box;
+      }
+
+      /* Layar sedang: sembunyikan teks merek, biarkan toolbar membungkus rapi */
+      @media (max-width: 720px) {
+        #toolbar .brand span.label {
+          display: none;
+        }
+        #toolbar {
+          gap: 6px;
+          padding: 8px;
+        }
+        #toolbar .spacer {
+          flex: 1 1 100%;
+          height: 0;
+          order: 5;
+        }
+      }
+
+      /* Layar kecil: padatkan tombol, sembunyikan label kontrol kecepatan
+         tapi pertahankan SEMUA tombol & angka tetap terlihat (tidak ada
+         yang terpotong) */
+      @media (max-width: 480px) {
+        #toolbar {
+          gap: 5px;
+          padding: 7px;
+        }
+        .btn {
+          padding: 7px 8px;
+          font-size: 12px;
+        }
+        #toolbar .speed label {
+          display: none;
+        }
+        #toolbar .speed {
+          padding: 4px 6px;
+        }
+        #toolbar .status {
+          min-width: 50px;
+          padding: 7px 6px;
+          font-size: 11px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header id="toolbar">
+        <div class="brand">
+          <span class="dot"></span><span class="label">Playground JS</span>
+        </div>
+
+        <button id="btn-run" class="btn primary" title="Jalankan kode (Ctrl+Enter)">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          <span class="label">Run</span>
+        </button>
+
+        <button id="btn-format" class="btn" title="Rapikan kode dengan Prettier">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="4" y1="7" x2="20" y2="7" />
+            <line x1="4" y1="12" x2="14" y2="12" />
+            <line x1="4" y1="17" x2="18" y2="17" />
+          </svg>
+          <span class="label"></span>
+          <!-- >Format -->
+        </button>
+
+        <span id="status" class="status" title="Waktu eksekusi terakhir">&mdash;</span>
+
+        <div class="spacer"></div>
+
+        <div class="speed" title="Jeda sebelum auto-run dijalankan">
+          <label for="speed"></label>
+          <!-- >Jeda -->
+          <select id="speed" aria-label="Jeda auto-run">
+            <option value="150">150ms</option>
+            <option value="250" selected>250ms</option>
+            <option value="400">400ms</option>
+            <option value="600">600ms</option>
+            <option value="1000">1s</option>
+          </select>
+        </div>
+
+        <button id="btn-autorun" class="btn" aria-pressed="true" title="Jalankan otomatis saat mengetik">
+          <span class="label">Auto</span>
+        </button>
+
+        <button id="btn-linenum" class="btn" aria-pressed="true" title="Tampilkan nomor baris">
+          <span class="label">1</span>
+        </button>
+
+        <button id="btn-wrap" class="btn" aria-pressed="false" title="Bungkus baris panjang">
+          <span class="label">[ ]</span>
+          <!-- >Bungkus -->
+        </button>
+
+        <button id="btn-clear" class="btn" title="Bersihkan konsol">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 6h18M8 6V4h8v2m-9 0v14a1 1 0 001 1h8a1 1 0 001-1V6" />
+          </svg>
+          <span class="label"></span>
+          <!-- >Clear -->
+        </button>
+      </header>
+
+      <div id="editor-pane"></div>
+
+      <div id="resizer" title="Geser untuk mengatur ukuran"></div>
+
+      <section id="console-pane">
+        <div id="console" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <script type="module">
+      // =========================================================
+      //  IMPORT — CodeMirror 6 (lewat import map di <head> agar
+      //  modul inti seperti @codemirror/state tidak ter-duplikat).
+      // =========================================================
+      import { EditorState, Compartment } from "@codemirror/state";
+      import {
+        EditorView,
+        keymap,
+        lineNumbers,
+        highlightActiveLine,
+        highlightActiveLineGutter,
+        drawSelection,
+        rectangularSelection,
+        crosshairCursor,
+      } from "@codemirror/view";
+      import {
+        defaultKeymap,
+        history,
+        historyKeymap,
+        indentWithTab,
+      } from "@codemirror/commands";
+      import {
+        javascript,
+        javascriptLanguage,
+        scopeCompletionSource,
+      } from "@codemirror/lang-javascript";
+      import {
+        syntaxHighlighting,
+        HighlightStyle,
+        bracketMatching,
+        foldGutter,
+        foldKeymap,
+        indentOnInput,
+        indentUnit,
+      } from "@codemirror/language";
+      import {
+        autocompletion,
+        closeBrackets,
+        closeBracketsKeymap,
+        completionKeymap,
+      } from "@codemirror/autocomplete";
+      import { lintKeymap } from "@codemirror/lint";
+      import {
+        highlightSelectionMatches,
+        searchKeymap,
+      } from "@codemirror/search";
+      import { tags as t } from "@lezer/highlight";
+
+      // =========================================================
+      //  TEMA & WARNA SINTAKS
+      // =========================================================
+      const editorTheme = EditorView.theme(
+        {
+          "&": {
+            color: "#c8cdd8",
+            backgroundColor: "#0f1115",
+            height: "100%",
+          },
+          ".cm-content": { caretColor: "#7da8b8", padding: "10px 0" },
+          ".cm-cursor, .cm-dropCursor": { borderLeftColor: "#7da8b8" },
+          "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection":
+            { backgroundColor: "#26313d" },
+          ".cm-gutters": {
+            backgroundColor: "#0f1115",
+            color: "#3d4654",
+            border: "none",
+          },
+          ".cm-activeLineGutter": { backgroundColor: "#14171d", color: "#7a8494" },
+          ".cm-activeLine": { backgroundColor: "#13161c" },
+          ".cm-foldGutter span": { color: "#546070" },
+          ".cm-selectionMatch": { backgroundColor: "#243341" },
+          "&.cm-focused .cm-matchingBracket": {
+            backgroundColor: "#2a3a44",
+            color: "#9cc4d3",
+            outline: "none",
+          },
+          ".cm-tooltip": {
+            backgroundColor: "#171b22",
+            border: "1px solid #232833",
+            borderRadius: "6px",
+          },
+          ".cm-tooltip-autocomplete ul li[aria-selected]": {
+            backgroundColor: "#1d2730",
+            color: "#9cc4d3",
+          },
+          ".cm-tooltip-autocomplete ul li": { color: "#c8cdd8" },
+        },
+        { dark: true }
+      );
+
+      const highlightStyle = HighlightStyle.define([
+        { tag: [t.keyword, t.controlKeyword, t.operatorKeyword, t.definitionKeyword, t.moduleKeyword], color: "#8a7fba" },
+        { tag: [t.string, t.special(t.string), t.regexp], color: "#8faa7a" },
+        { tag: t.number, color: "#b8956a" },
+        { tag: [t.bool, t.null, t.atom], color: "#b07878" },
+        { tag: [t.comment, t.lineComment, t.blockComment], color: "#546070", fontStyle: "italic" },
+        { tag: [t.function(t.variableName), t.function(t.definition(t.variableName))], color: "#7da8b8" },
+        { tag: [t.propertyName, t.function(t.propertyName)], color: "#a89870" },
+        { tag: t.operator, color: "#7a8a9a" },
+        { tag: [t.paren, t.squareBracket, t.brace, t.separator, t.punctuation], color: "#8899aa" },
+        { tag: t.variableName, color: "#c8cdd8" },
+        { tag: [t.typeName, t.className, t.standard(t.variableName), t.namespace], color: "#7a9ab8" },
+        { tag: t.definition(t.propertyName), color: "#a89870" },
+      ]);
+
+      // =========================================================
+      //  COMPARTMENTS (fitur yang bisa di-toggle)
+      // =========================================================
+      const lineNumComp = new Compartment();
+      const wrapComp = new Compartment();
+
+      const KODE_AWAL = `// Selamat datang di Playground JavaScript!
+// Tulis kode di sini, hasil console.log muncul di bawah.
+
+const angka = [1, 2, 3, 4, 5];
+const total = angka.reduce((a, b) => a + b, 0);
+
+console.log('Daftar angka:', angka);
+console.log('Total:', total);
+
+const orang = { nama: 'Budi', umur: 25, hobi: ['ngoding', 'kopi'] };
+console.info('Objek orang:', orang);
+
+console.warn('Ini contoh peringatan');
+// console.error('Ini contoh error');
+
+function sapa(nama) {
+  return \`Halo, \${nama}!\`;
+}
+console.log(sapa('Dunia'));
+`;
+
+      // =========================================================
+      //  EDITOR
+      // =========================================================
+      const editorParent = document.getElementById("editor-pane");
+
+      const baseExtensions = [
+        lineNumbers ? lineNumComp.of(lineNumbers()) : [],
+        highlightActiveLineGutter(),
+        history(),
+        drawSelection(),
+        rectangularSelection(),
+        crosshairCursor(),
+        highlightActiveLine(),
+        foldGutter({ markerDOM: makeFoldMarker }),
+        indentOnInput(),
+        indentUnit.of("  "),
+        bracketMatching(),
+        closeBrackets(),
+        autocompletion({
+          activateOnTyping: true,
+          maxRenderedOptions: 24,
+          defaultKeymap: true,
+        }),
+        highlightSelectionMatches(),
+        javascript(),
+        // Lengkapi global asli (console, Math, JSON, Array, document, dll)
+        javascriptLanguage.data.of({
+          autocomplete: scopeCompletionSource(globalThis),
+        }),
+        syntaxHighlighting(highlightStyle),
+        editorTheme,
+        wrapComp.of([]),
+        keymap.of([
+          ...closeBracketsKeymap,
+          ...defaultKeymap,
+          ...searchKeymap,
+          ...historyKeymap,
+          ...foldKeymap,
+          ...completionKeymap,
+          ...lintKeymap,
+          indentWithTab,
+          { key: "Mod-Enter", run: () => (runCode(), true) },
+          { key: "Mod-/", run: toggleLineComment },
+        ]),
+        EditorView.updateListener.of((u) => {
+          if (u.docChanged) scheduleRun();
+        }),
+      ];
+
+      function makeFoldMarker(open) {
+        const span = document.createElement("span");
+        span.textContent = open ? "\u25be" : "\u25b8";
+        return span;
+      }
+
+      // toggle komentar baris sederhana (Ctrl+/)
+      function toggleLineComment(view) {
+        const { state } = view;
+        const changes = [];
+        const range = state.selection.main;
+        const startLine = state.doc.lineAt(range.from).number;
+        const endLine = state.doc.lineAt(range.to).number;
+        let allCommented = true;
+        for (let i = startLine; i <= endLine; i++) {
+          const line = state.doc.line(i);
+          if (line.text.trim() && !line.text.trimStart().startsWith("//")) {
+            allCommented = false;
+            break;
+          }
+        }
+        for (let i = startLine; i <= endLine; i++) {
+          const line = state.doc.line(i);
+          if (!line.text.trim()) continue;
+          if (allCommented) {
+            const idx = line.text.indexOf("//");
+            const after = line.text[idx + 2] === " " ? 3 : 2;
+            changes.push({ from: line.from + idx, to: line.from + idx + after });
+          } else {
+            const indent = line.text.length - line.text.trimStart().length;
+            changes.push({ from: line.from + indent, insert: "// " });
+          }
+        }
+        view.dispatch({ changes });
+        return true;
+      }
+
+      const view = new EditorView({
+        state: EditorState.create({ doc: KODE_AWAL, extensions: baseExtensions }),
+        parent: editorParent,
+      });
+
+      // =========================================================
+      //  KONSOL OUTPUT
+      // =========================================================
+      const consoleEl = document.getElementById("console");
+      const statusEl = document.getElementById("status");
+
+      function clearConsole() {
+        consoleEl.innerHTML = '<div class="empty">Konsol kosong — jalankan kode untuk melihat hasilnya.</div>';
+      }
+
+      function isExpandable(value) {
+        return value !== null && (typeof value === "object" || typeof value === "function");
+      }
+
+      function previewValue(value, depth = 0) {
+        const type = typeof value;
+        if (value === null) return "null";
+        if (value === undefined) return "undefined";
+        if (type === "string") return depth === 0 ? value : `'${value}'`;
+        if (type === "number" || type === "boolean" || type === "bigint")
+          return String(value);
+        if (type === "symbol") return value.toString();
+        if (type === "function")
+          return `\u0192 ${value.name || "anonymous"}()`;
+        if (Array.isArray(value)) return `Array(${value.length})`;
+        if (value instanceof Error) return `${value.name}: ${value.message}`;
+        if (value instanceof Map) return `Map(${value.size})`;
+        if (value instanceof Set) return `Set(${value.size})`;
+        const ctor = value.constructor && value.constructor.name;
+        return ctor && ctor !== "Object" ? `${ctor} {…}` : "{…}";
+      }
+
+      function detailValue(value) {
+        try {
+          if (value instanceof Error) return value.stack || String(value);
+          if (typeof value === "function") return value.toString();
+          if (value instanceof Map) value = Object.fromEntries(value);
+          if (value instanceof Set) value = Array.from(value);
+          return JSON.stringify(
+            value,
+            (k, v) => {
+              if (typeof v === "function") return `\u0192 ${v.name || "anonymous"}()`;
+              if (typeof v === "bigint") return v.toString() + "n";
+              if (typeof v === "symbol") return v.toString();
+              if (typeof v === "undefined") return "undefined";
+              return v;
+            },
+            2
+          );
+        } catch (e) {
+          return String(value);
+        }
+      }
+
+      function pad(n) {
+        return String(n).padStart(2, "0");
+      }
+
+      function appendLog(type, args) {
+        // hapus placeholder kosong
+        const empty = consoleEl.querySelector(".empty");
+        if (empty) empty.remove();
+
+        const now = new Date();
+        const ts = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+        // judul singkat: gabungan preview tiap argumen
+        let title = args
+          .map((a) => previewValue(a))
+          .join(" ");
+        const MAX = 140;
+        if (title.length > MAX) title = title.slice(0, MAX) + "\u2026";
+
+        // detail muncul saat di-klik, jika ada nilai kompleks
+        const expandable = args.some(isExpandable);
+        const detailText = expandable
+          ? args
+              .map((a) => (isExpandable(a) ? detailValue(a) : previewValue(a, 0)))
+              .join("\n")
+          : null;
+
+        const row = document.createElement("div");
+        row.className = "log " + type + (expandable ? " expandable" : "");
+
+        const labelMap = { log: "log", info: "info", warn: "warn", error: "error" };
+
+        row.innerHTML = `
+          <div class="gutter"><span class="badge">${labelMap[type] || "log"}</span></div>
+          <div class="body">
+            <div class="preview">${
+              expandable ? '<span class="caret">\u203a</span>' : ""
+            }<span class="txt"></span></div>
+            ${expandable ? '<pre class="detail"></pre>' : ""}
+          </div>
+          <span class="ts">${ts}</span>`;
+
+        row.querySelector(".txt").textContent = title;
+        if (expandable) {
+          row.querySelector(".detail").textContent = detailText;
+          const preview = row.querySelector(".preview");
+          preview.addEventListener("click", () => row.classList.toggle("expanded"));
+        }
+
+        consoleEl.appendChild(row);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+      }
+
+      // =========================================================
+      //  RUN ENGINE
+      // =========================================================
+      const originalConsole = {
+        log: console.log.bind(console),
+        info: console.info.bind(console),
+        warn: console.warn.bind(console),
+        error: console.error.bind(console),
+      };
+
+      function runCode() {
+        const code = view.state.doc.toString();
+        clearConsole();
+
+        // override console sementara
+        console.log = (...a) => appendLog("log", a);
+        console.info = (...a) => appendLog("info", a);
+        console.warn = (...a) => appendLog("warn", a);
+        console.error = (...a) => appendLog("error", a);
+
+        const start = performance.now();
+        let ok = true;
+        try {
+          new Function(code)();
+        } catch (err) {
+          ok = false;
+          appendLog("error", [err instanceof Error ? err : new Error(String(err))]);
+        } finally {
+          // kembalikan console asli
+          console.log = originalConsole.log;
+          console.info = originalConsole.info;
+          console.warn = originalConsole.warn;
+          console.error = originalConsole.error;
+        }
+
+        const ms = (performance.now() - start).toFixed(1);
+        statusEl.textContent = `${ms} ms`;
+        statusEl.classList.toggle("err", !ok);
+
+        // jika tidak ada output sama sekali
+        if (!consoleEl.querySelector(".log") && ok) {
+          consoleEl.innerHTML =
+            '<div class="empty">Kode berhasil dijalankan tanpa output console.</div>';
+        }
+      }
+
+      // auto-run dengan debounce yang bisa diatur lewat dropdown "Jeda"
+      let autoRun = true;
+      let debounceMs = 250;
+      let debounceTimer = null;
+      function scheduleRun() {
+        if (!autoRun) return;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(runCode, debounceMs);
+      }
+
+      // =========================================================
+      //  PRETTIER (lazy load saat tombol Format ditekan)
+      // =========================================================
+      let prettierMods = null;
+      async function ensurePrettier() {
+        if (prettierMods) return prettierMods;
+        statusEl.textContent = "\u2026";
+        statusEl.classList.remove("err");
+        const [standalone, babel, estree] = await Promise.all([
+          import("https://esm.sh/prettier@3/standalone"),
+          import("https://esm.sh/prettier@3/plugins/babel"),
+          import("https://esm.sh/prettier@3/plugins/estree"),
+        ]);
+        prettierMods = {
+          format: standalone.format || (standalone.default && standalone.default.format),
+          plugins: [babel.default || babel, estree.default || estree],
+        };
+        return prettierMods;
+      }
+
+      async function formatCode() {
+        try {
+          const { format, plugins } = await ensurePrettier();
+          const code = view.state.doc.toString();
+          const formatted = await format(code, {
+            parser: "babel",
+            plugins,
+            semi: true,
+            singleQuote: true,
+            tabWidth: 2,
+            trailingComma: "es5",
+            printWidth: 80,
+          });
+          view.dispatch({
+            changes: { from: 0, to: view.state.doc.length, insert: formatted },
+          });
+          statusEl.classList.remove("err");
+          if (autoRun) scheduleRun();
+        } catch (err) {
+          statusEl.textContent = "format gagal";
+          statusEl.classList.add("err");
+        }
+      }
+
+      // =========================================================
+      //  TOOLBAR — event
+      // =========================================================
+      const btnRun = document.getElementById("btn-run");
+      const btnFormat = document.getElementById("btn-format");
+      const btnAutorun = document.getElementById("btn-autorun");
+      const btnLineNum = document.getElementById("btn-linenum");
+      const btnWrap = document.getElementById("btn-wrap");
+      const btnClear = document.getElementById("btn-clear");
+
+      btnRun.addEventListener("click", runCode);
+      btnFormat.addEventListener("click", formatCode);
+
+      btnAutorun.addEventListener("click", () => {
+        autoRun = !autoRun;
+        btnAutorun.setAttribute("aria-pressed", String(autoRun));
+        if (autoRun) scheduleRun();
+      });
+
+      const speedSel = document.getElementById("speed");
+      speedSel.addEventListener("change", () => {
+        debounceMs = Number(speedSel.value) || 250;
+      });
+
+      let lineNumOn = true;
+      btnLineNum.addEventListener("click", () => {
+        lineNumOn = !lineNumOn;
+        btnLineNum.setAttribute("aria-pressed", String(lineNumOn));
+        view.dispatch({
+          effects: lineNumComp.reconfigure(lineNumOn ? lineNumbers() : []),
+        });
+      });
+
+      let wrapOn = false;
+      btnWrap.addEventListener("click", () => {
+        wrapOn = !wrapOn;
+        btnWrap.setAttribute("aria-pressed", String(wrapOn));
+        view.dispatch({
+          effects: wrapComp.reconfigure(wrapOn ? EditorView.lineWrapping : []),
+        });
+      });
+
+      btnClear.addEventListener("click", () => {
+        clearConsole();
+      });
+
+      // =========================================================
+      //  RESIZER (drag atas-bawah)
+      // =========================================================
+      const editorPane = document.getElementById("editor-pane");
+      const consolePane = document.getElementById("console-pane");
+      const app = document.getElementById("app");
+      const resizer = document.getElementById("resizer");
+
+      function startDrag(clientYStart) {
+        const startHeight = editorPane.getBoundingClientRect().height;
+        const appRect = app.getBoundingClientRect();
+
+        function onMove(clientY) {
+          const delta = clientY - clientYStart;
+          let newH = startHeight + delta;
+          const minEditor = 80;
+          const minConsole = 60;
+          const maxEditor = appRect.height - minConsole - 120; // sisakan toolbar+head
+          newH = Math.max(minEditor, Math.min(newH, maxEditor));
+          editorPane.style.height = newH + "px";
+        }
+        return onMove;
+      }
+
+      resizer.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        const onMove = startDrag(e.clientY);
+        document.body.style.cursor = "row-resize";
+        document.body.style.userSelect = "none";
+        const move = (ev) => onMove(ev.clientY);
+        const up = () => {
+          document.removeEventListener("mousemove", move);
+          document.removeEventListener("mouseup", up);
+          document.body.style.cursor = "";
+          document.body.style.userSelect = "";
+        };
+        document.addEventListener("mousemove", move);
+        document.addEventListener("mouseup", up);
+      });
+
+      resizer.addEventListener("touchstart", (e) => {
+        const onMove = startDrag(e.touches[0].clientY);
+        const move = (ev) => onMove(ev.touches[0].clientY);
+        const end = () => {
+          document.removeEventListener("touchmove", move);
+          document.removeEventListener("touchend", end);
+        };
+        document.addEventListener("touchmove", move, { passive: false });
+        document.addEventListener("touchend", end);
+      }, { passive: true });
+
+      // =========================================================
+      //  INISIALISASI
+      // =========================================================
+      clearConsole();
+      runCode();
+      view.focus();
+    </script>
+  </body>
+</html>
