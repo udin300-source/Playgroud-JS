@@ -717,6 +717,7 @@ console.log(sapa('Dunia'));
       }
 
       // toggle komentar baris sederhana (Ctrl+/)
+// toggle komentar baris sederhana (Ctrl+/)
       function toggleLineComment(view) {
         const { state } = view;
         const changes = [];
@@ -743,15 +744,20 @@ console.log(sapa('Dunia'));
             changes.push({ from: line.from + indent, insert: "// " });
           }
         }
-        view.dispatch({ changes });
-        return true;
+        
+        // Cek apakah ada perubahan teks, jika tidak ada, biarkan seleksi teks normal bekerja
+        if (changes.length > 0) {
+          view.dispatch({ changes });
+          return true;
+        }
+        return false; 
       }
 
+      // KODE INI TETAP DIPERTAHANKAN DI BAWAHNYA
       const view = new EditorView({
         state: EditorState.create({ doc: KODE_AWAL, extensions: baseExtensions }),
         parent: editorParent,
       });
-
       // =========================================================
       //  KONSOL OUTPUT
       // =========================================================
