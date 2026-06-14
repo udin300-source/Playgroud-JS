@@ -589,17 +589,15 @@
           },
           ".cm-content": { caretColor: "#7da8b8", padding: "10px 0" },
           ".cm-cursor, .cm-dropCursor": { borderLeftColor: "#7da8b8" },
-          // 1. Warna untuk area background blok (lapisan bawah)
-          ".cm-selectionBackground": { backgroundColor: "#78b9ff !important" },
-          
-          // 2. Warna untuk teks asli yang sedang diblok (lapisan atas browser)
-          ".cm-content ::selection": { 
-            backgroundColor: "#78b9ff !important", 
-            color: "#0f1115 !important" 
+          // 1. Warna latar belakang untuk teks yang sedang Anda blok/seleksi secara aktif
+          "&.cm-focused .cm-selectionBackground, .cm-selectionBackground": { 
+            backgroundColor: "rgba(120, 185, 255, 0.35) !important" 
           },
-          
-          // 3. Warna kata kembar di baris lain (kita buat agak redup/berbeda supaya Anda tidak bingung)
-          ".cm-selectionMatch": { backgroundColor: "#243341 !important" },
+
+          // 2. Warna kata kembar di baris lain (fitur Highlight Selection Matches)
+          ".cm-selectionMatch": { 
+            backgroundColor: "rgba(120, 185, 255, 0.15) !important" 
+          },
                     
           ".cm-gutters": {
             backgroundColor: "#0f1115",
