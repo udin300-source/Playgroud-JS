@@ -817,7 +817,7 @@ console.log(sapa('Dunia'));
 
         const now = new Date();
         const ms = String(now.getMilliseconds()).padStart(3, '0'); 
-        const ts = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${ms}`;
+        const ts = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}:${ms}`;
         // jam:menit:detik:milidetik
         // judul singkat: gabungan preview tiap argumen
         let title = args
